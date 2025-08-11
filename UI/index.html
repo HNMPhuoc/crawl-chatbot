@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trang web mẫu với Chatbot</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- CSS riêng cho chat -->
+    <link rel="stylesheet" href="../index.css">
+</head>
+<body>
+    <!-- Header -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">Công ty AI Việt Nam</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" 
+                data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" 
+                aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+        </div>
+    </nav>
+    <!-- Nội dung chính -->
+    <div class="container my-5">
+        <h1 class="mb-4">Công nghệ Trí tuệ Nhân tạo</h1>
+        <div class="mb-4">
+            <h3>Giới thiệu</h3>
+            <p>
+                Trí tuệ nhân tạo (AI) đang thay đổi mạnh mẽ cách chúng ta làm việc, học tập và giao tiếp.
+                Công ty AI Việt Nam tập trung vào việc phát triển các giải pháp AI ứng dụng trong y tế, giáo dục và công nghiệp.
+                Các thuật toán học sâu (Deep Learning) và học máy (Machine Learning) cho phép hệ thống tự động học hỏi và cải thiện hiệu suất theo thời gian.
+            </p>
+        </div>
+        <div class="mb-4">
+            <h3>Ứng dụng AI trong y tế</h3>
+            <p>
+                AI giúp phân tích hình ảnh y khoa, dự đoán nguy cơ bệnh tật và hỗ trợ bác sĩ trong chẩn đoán.
+                Ví dụ, các mô hình AI có thể nhận diện tế bào ung thư với độ chính xác cao hơn so với phương pháp truyền thống.
+                Ngoài ra, chatbot y tế hỗ trợ trả lời câu hỏi của bệnh nhân 24/7.
+            </p>
+        </div>
+        <div class="mb-4">
+            <h3>AI trong giáo dục</h3>
+            <p>
+                Nền tảng học tập thông minh có thể cá nhân hóa lộ trình học cho từng học viên.
+                AI đánh giá khả năng, gợi ý bài tập phù hợp và theo dõi tiến bộ của người học theo thời gian.
+                Công nghệ này cũng hỗ trợ giáo viên trong việc chấm điểm tự động và phân tích dữ liệu lớp học.
+            </p>
+        </div>
+        <div class="mb-4">
+            <h3>AI trong công nghiệp</h3>
+            <p>
+                Trong sản xuất, AI giúp tối ưu hóa quy trình, dự đoán sự cố máy móc và giảm thiểu chi phí bảo trì.
+                Các hệ thống thị giác máy tính (Computer Vision) có thể kiểm tra chất lượng sản phẩm theo thời gian thực.
+                Ứng dụng AI còn giúp tối ưu quản lý chuỗi cung ứng và dự đoán nhu cầu thị trường.
+            </p>
+        </div>
+        <div class="mb-4">
+            <h3>Tương lai của AI</h3>
+            <p>
+                AI sẽ tiếp tục phát triển mạnh mẽ, đặc biệt là trong lĩnh vực xử lý ngôn ngữ tự nhiên (NLP) và robot tự hành.
+                Tuy nhiên, việc phát triển AI cần đi kèm với các nguyên tắc đạo đức và bảo vệ quyền riêng tư.
+                Công ty AI Việt Nam cam kết mang lại các giải pháp an toàn, minh bạch và hiệu quả cho xã hội.
+            </p>
+        </div>
+        <section class="my-4">
+            <h3>Bảng dữ liệu AI</h3>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Tên hệ thống</th>
+                        <th>Lĩnh vực</th>
+                        <th>Mô tả</th>
+                        <th>Độ chính xác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>MedVision</td>
+                        <td>Y tế</td>
+                        <td>Nhận diện bệnh lý từ hình ảnh X-quang.</td>
+                        <td>97%</td>
+                    </tr>
+                    <tr>
+                        <td>LearnSmart</td>
+                        <td>Giáo dục</td>
+                        <td>Đưa ra lộ trình học tập cá nhân hóa.</td>
+                        <td>95%</td>
+                    </tr>
+                    <tr>
+                        <td>ProdPredict</td>
+                        <td>Công nghiệp</td>
+                        <td>Dự đoán sự cố dây chuyền sản xuất.</td>
+                        <td>92%</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </div>
+    <!-- Bong bóng chat -->
+    <div id="chat-bubble">💬</div>
+    <!-- Popup chat -->
+    <div id="chat-popup">
+        <div id="chat-header">
+            <div class="avatar">
+                <img src="./AI.png" alt="AI Assistant" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div style="display:none; width:100%; height:100%; background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius:50%; align-items:center; justify-content:center; color:white; font-weight:bold;">AI</div>
+            </div>
+            <div class="title">AI Assistant</div>
+            <span id="close-chat">✖</span>
+        </div>
+        <div id="chat-messages">
+            <!-- Welcome message -->
+            <div class="message bot">
+                <div class="message-avatar">
+                    <img src="./AI.png" alt="AI" onerror="this.style.display='none'; this.parentElement.innerHTML='🤖';">
+                </div>
+                <div class="message-content">
+                    Xin chào! Tôi là AI Assistant. Tôi có thể giúp gì cho bạn hôm nay?
+                </div>
+            </div>
+            <!-- Typing indicator -->
+            <div class="message bot typing" id="typing-indicator">
+                <div class="message-avatar">
+                    <img src="./AI.png" alt="AI" onerror="this.style.display='none'; this.parentElement.innerHTML='🤖';">
+                </div>
+                <div class="message-content">
+                    <div class="typing-dots">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="chat-input-area">
+            <input id="chat-input" type="text" placeholder="Nhập câu hỏi của bạn...">
+            <button id="send-btn">➤</button>
+        </div>
+    </div>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- JS riêng -->
+    <script type="module" src="../CrawlData.js"></script>
+    <script src="../BubbleChat.js"></script>
+</body>
+</html>
