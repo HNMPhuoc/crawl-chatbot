@@ -1,13 +1,12 @@
-class CrawlDataIntegration {
-    constructor(n8nWebhookUrl) {
-        this.n8nWebhookUrl = n8nWebhookUrl;
+class WebDataCrawler {
+    constructor() {
         this.retryConfig = {
             maxRetries: 3,
             retryDelay: 2000,
             backoffMultiplier: 2
         };
         this.timeout = 45000; // Increase timeout for heavy sites
-
+        
         // Site-specific configurations
         this.siteConfigs = {
             'facebook.com': {
@@ -81,42 +80,58 @@ class CrawlDataIntegration {
                     title: 'h1, .docs-title, .page-title',
                     remove: '.sidebar, .navigation, .docs-nav'
                 }
+            },
+            'github.com': {
+                waitTime: 1500,
+                selectors: {
+                    content: '.markdown-body, .repository-content, .readme',
+                    title: 'h1, .entry-title, .f4',
+                    remove: '.Header, .footer, .js-sticky'
+                }
+            },
+            'stackoverflow.com': {
+                waitTime: 1000,
+                selectors: {
+                    content: '.s-prose, .post-text, .answer',
+                    title: 'h1, .question-hyperlink',
+                    remove: '.left-sidebar, .right-sidebar, .js-vote-count'
+                }
             }
         };
     }
 
     async crawlPage(url, options = {}) {
         console.log(`🔍 Crawling: ${url}`);
-
+        
         try {
             const domain = new URL(url).hostname.replace('www.', '');
             const siteConfig = this.siteConfigs[domain] || {};
-
+            
             // Wait for dynamic content if needed
             if (siteConfig.waitTime) {
                 console.log(`⏳ Waiting ${siteConfig.waitTime}ms for dynamic content...`);
                 await this.sleep(siteConfig.waitTime);
             }
-
+            
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), this.timeout);
-
+            
             const response = await this.fetchWithRetry(url, {
                 headers: this.getHeaders(domain),
                 signal: controller.signal
             });
-
+            
             clearTimeout(timeoutId);
-
+            
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
-
+            
             const html = await response.text();
-
+            
             // Try multiple parsing strategies
             const pageData = await this.parseWithStrategies(html, url, siteConfig);
-
+            
             if (!pageData.text || pageData.text.trim().length < 50) {
                 console.warn(`⚠️ Minimal content found on ${url}, trying alternative methods`);
                 const alternativeData = this.parseWithAlternativeMethod(html, url);
@@ -124,7 +139,7 @@ class CrawlDataIntegration {
                     Object.assign(pageData, alternativeData);
                 }
             }
-
+            
             const chunks = this.splitIntoChunks(pageData.text, options.chunkSize || 1000);
             console.log(`📄 Extracted ${chunks.length} chunks from ${url}`);
 
@@ -144,16 +159,16 @@ class CrawlDataIntegration {
                 chunkIndex: index,
                 totalChunks: chunks.length
             }));
-
+            
         } catch (error) {
             console.error(`❌ Error crawling ${url}:`, error.message);
-
+            
             // Try fallback method for problematic sites
             if (error.name === 'AbortError' || error.message.includes('timeout')) {
                 console.log(`🔄 Trying fallback method for ${url}`);
                 return this.crawlWithFallback(url, options);
             }
-
+            
             throw new Error(`Failed to crawl ${url}: ${error.message}`);
         }
     }
@@ -192,6 +207,13 @@ class CrawlDataIntegration {
             'lazada.vn': {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 'Referer': 'https://www.lazada.vn/'
+            },
+            'github.com': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+            },
+            'stackoverflow.com': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
             }
         };
 
@@ -312,7 +334,7 @@ class CrawlDataIntegration {
             'main .content',
             'article .content',
             '.post-content',
-            '.entry-content',
+            '.entry-content', 
             '.article-content',
             '.story-body',
             '.content-body',
@@ -355,12 +377,12 @@ class CrawlDataIntegration {
         // Try to get all visible text as last resort
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
-
+        
         // Remove all script and style tags
         doc.querySelectorAll('script, style, noscript').forEach(el => el.remove());
-
+        
         const allText = doc.body ? (doc.body.innerText || doc.body.textContent || '') : '';
-
+        
         return {
             title: this.extractTitle(doc),
             text: this.cleanText(allText),
@@ -391,7 +413,7 @@ class CrawlDataIntegration {
 
     async crawlWithFallback(url, options) {
         console.log(`🔄 Using fallback method for ${url}`);
-
+        
         try {
             // Simple fetch without timeout for problematic sites
             const response = await fetch(url, {
@@ -406,7 +428,7 @@ class CrawlDataIntegration {
 
             const html = await response.text();
             const pageData = this.parseWithAlternativeMethod(html, url);
-
+            
             if (pageData.text.length < 50) {
                 console.log(`⚠️ Minimal content extracted from ${url}`);
                 return [];
@@ -443,10 +465,10 @@ class CrawlDataIntegration {
             if (attempt >= this.retryConfig.maxRetries) {
                 throw error;
             }
-
+            
             const delay = this.retryConfig.retryDelay * Math.pow(this.retryConfig.backoffMultiplier, attempt - 1);
             console.log(`🔄 Retry ${attempt}/${this.retryConfig.maxRetries} for ${url} in ${delay}ms`);
-
+            
             await this.sleep(delay);
             return this.fetchWithRetry(url, options, attempt + 1);
         }
@@ -476,15 +498,15 @@ class CrawlDataIntegration {
         try {
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
-
+            
             const unwantedSelectors = [
-                'script', 'style', 'nav', 'footer', 'header',
+                'script', 'style', 'nav', 'footer', 'header', 
                 '.navigation', '.sidebar', '.menu', '.ads', '.advertisement',
                 '#comments', '.comment', '.social-share', '.cookie-notice',
                 '.popup', '.modal', '.overlay', '[role="banner"]', '[role="navigation"]',
                 '.related-posts', '.recommended', '.trending'
             ];
-
+            
             unwantedSelectors.forEach(selector => {
                 doc.querySelectorAll(selector).forEach(el => el.remove());
             });
@@ -494,7 +516,7 @@ class CrawlDataIntegration {
             const metadata = this.extractMetadata(doc, url);
 
             return { title, text, metadata };
-
+            
         } catch (error) {
             console.error('Error parsing HTML:', error);
             return { title: '', text: '', metadata: {} };
@@ -521,7 +543,7 @@ class CrawlDataIntegration {
 
     extractMainContent(doc) {
         const contentSelectors = [
-            'main', 'article', '.content', '.main-content',
+            'main', 'article', '.content', '.main-content', 
             '.post-content', '.entry-content', '#content',
             '.article-body', '.story-body', '.post-body',
             '[role="main"]', '.page-content'
@@ -582,7 +604,7 @@ class CrawlDataIntegration {
 
     detectLanguage(text) {
         const sample = text.substring(0, 100).toLowerCase();
-
+        
         if (/[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/.test(sample)) {
             return 'vi';
         } else if (/[а-яё]/.test(sample)) {
@@ -594,7 +616,7 @@ class CrawlDataIntegration {
         } else if (/[가-힣]/.test(sample)) {
             return 'ko';
         }
-
+        
         return 'en';
     }
 
@@ -615,7 +637,7 @@ class CrawlDataIntegration {
                     chunks.push(currentChunk.trim());
                     currentChunk = '';
                 }
-
+                
                 const sentences = paragraph.match(/[^.!?]+[.!?]+/g) || [paragraph];
                 for (const sentence of sentences) {
                     if ((currentChunk + sentence).length > maxSize && currentChunk.trim()) {
@@ -642,90 +664,6 @@ class CrawlDataIntegration {
         return chunks.filter(chunk => chunk.length > 10); // Filter out very short chunks
     }
 
-    async sendToN8n(crawlData) {
-        if (!crawlData || crawlData.length === 0) {
-            console.log('⚠️ No data to send to n8n');
-            return null;
-        }
-
-        console.log(`📤 Sending ${crawlData.length} chunks to n8n...`);
-        try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), this.timeout);
-
-            const response = await fetch(this.n8nWebhookUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'User-Agent': 'CrawlDataIntegration/2.0'
-                },
-                body: JSON.stringify({
-                    timestamp: new Date().toISOString(),
-                    totalChunks: crawlData.length,
-                    source: crawlData[0]?.metadata?.domain || 'unknown',
-                    crawlMethod: crawlData[0]?.metadata?.crawlMethod || 'unknown',
-                    data: crawlData
-                }),
-                signal: controller.signal
-            });
-
-            clearTimeout(timeoutId);
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
-            }
-
-            const responseText = await response.text();
-            let result;
-
-            try {
-                result = responseText ? JSON.parse(responseText) : { success: true };
-            } catch (parseError) {
-                console.warn('Non-JSON response from n8n:', responseText);
-                result = { success: true, response: responseText };
-            }
-
-            console.log('✅ Successfully sent to n8n:', result);
-            return result;
-
-        } catch (error) {
-            console.error('❌ Failed to send to n8n:', error.message);
-            throw new Error(`Failed to send data to n8n: ${error.message}`);
-        }
-    }
-
-    async crawlAndIndex(url, options = {}) {
-        try {
-            console.log(`🚀 Starting enhanced crawl for: ${url}`);
-            const startTime = Date.now();
-
-            const crawlData = await this.crawlPage(url, options);
-
-            if (crawlData.length === 0) {
-                console.log('⚠️ No content extracted, skipping n8n upload');
-                return null;
-            }
-            console.log("Full crawled data:", JSON.stringify(crawlData, null, 2));
-            const result = await this.sendToN8n(crawlData);
-
-            const duration = Date.now() - startTime;
-            console.log(`🎉 Enhanced crawl completed in ${duration}ms`);
-            if (result && result.message) {
-                // Chỉ in ra giá trị của key 'message'
-                console.log(result.message);
-            } else {
-                // Trường hợp không có message, in ra một thông báo mặc định
-                console.log('Crawl successful! Data sent to n8n, but no specific message was returned.');
-            }
-            return result;
-
-        } catch (error) {
-            console.error('❌ Enhanced crawl failed:', error.message);
-            throw error;
-        }
-    }
-
     isValidUrl(string) {
         try {
             new URL(string);
@@ -737,55 +675,77 @@ class CrawlDataIntegration {
 
     async crawlMultipleUrls(urls, options = {}) {
         const results = [];
-        const maxConcurrent = options.maxConcurrent || 2; // Reduce concurrency for complex sites
-
+        const maxConcurrent = options.maxConcurrent || 2;
+        
         for (let i = 0; i < urls.length; i += maxConcurrent) {
             const batch = urls.slice(i, i + maxConcurrent);
-            const batchPromises = batch.map(url =>
-                this.crawlAndIndex(url, options).catch(error => ({
+            const batchPromises = batch.map(url => 
+                this.crawlPage(url, options).catch(error => ({
                     url,
-                    error: error.message
+                    error: error.message,
+                    success: false
                 }))
             );
-
+            
             const batchResults = await Promise.all(batchPromises);
             results.push(...batchResults);
-
-            // Add longer delay between batches for respectful crawling
+            
+            // Add delay between batches for respectful crawling
             if (i + maxConcurrent < urls.length) {
                 await this.sleep(3000);
             }
         }
-
+        
         return results;
+    }
+
+    // Add new sites configuration
+    addSiteConfig(domain, config) {
+        this.siteConfigs[domain] = config;
+    }
+
+    // Get current configuration for a domain
+    getSiteConfig(domain) {
+        return this.siteConfigs[domain] || null;
+    }
+
+    // List all configured sites
+    getConfiguredSites() {
+        return Object.keys(this.siteConfigs);
     }
 }
 
-// Enhanced usage example
+// Usage example - CHỈ CRAWL, KHÔNG GỬI ĐI ĐÂU CẢ
 (async () => {
-    const N8N_WEBHOOK_URL = 'http://localhost:5678/webhook/crawl';
-    const crawler = new CrawlDataIntegration(N8N_WEBHOOK_URL);
+    const crawler = new WebDataCrawler();
 
     try {
         const currentUrl = window.location.href;
-
+        
         if (!crawler.isValidUrl(currentUrl)) {
             throw new Error('Invalid URL');
         }
-
-        console.log('🌟 Starting enhanced multi-strategy crawl...');
-        const result = await crawler.crawlAndIndex(currentUrl, {
-            chunkSize: 800,
-            maxRetries: 3
+        
+        console.log('🌟 Starting web data crawl...');
+        const crawlData = await crawler.crawlPage(currentUrl, { 
+            chunkSize: 800
         });
-
-        if (result) {
-            console.log('🎯 Crawl successful! Data sent to n8n.');
+        
+        if (crawlData && crawlData.length > 0) {
+            console.log(`🎯 Crawl successful! Extracted ${crawlData.length} chunks.`);
+            console.log('📊 Crawled data:', crawlData);
+            
+            // Bạn có thể làm gì với data này:
+            // - Lưu vào localStorage
+            // - Gửi đến API khác
+            // - Xử lý thêm
+            // - Export ra file
+            
         } else {
             console.log('ℹ️ No content was extracted from this page.');
         }
-
+        
     } catch (error) {
-        console.error('💥 Enhanced crawl failed:', error.message);
+        console.error('💥 Web crawl failed:', error.message);
     }
 })();

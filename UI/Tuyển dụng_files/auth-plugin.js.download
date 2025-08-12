@@ -1,0 +1,296 @@
+(function ($) {
+    'use strict';
+
+    function activeFormSignUp() {
+        if ($('#form-sign-up').length) {
+            $('#form-sign-up').validate({
+                ignore: [],
+                errorElement: 'div',
+                errorClass: 'text-danger',
+                rules: {
+                    /*register_email: {
+                        required: true,
+                        email: true
+                    },
+                    register_password: {
+                        required: true,
+                        minlength: 6,
+                    },
+                    register_confirm_password: {
+                        required: true,
+                        equalTo: "#register_password"
+                    },*/
+                },
+                submitHandler: function (form) {
+                    let $form = $(form);
+                    let $inputs = $form.find('input, button');
+                    let request = handleSendAjax($form, $inputs);
+
+                    // callback handler that will be called on success
+                    request.done(function (response, textStatus, jqXHR) {
+                        // show_toast_alert(response.message, !response.error);
+                        if (!response.error) {
+                            $('#modalRegister').modal('hide');
+                            $form[0].reset();
+                            $('#modalRegisterSuccess').modal('show');
+                            // window.location.reload();
+                            if (response.data && response.data.action && response.data?.action === 'need_active') {
+                                $('#modalNotActivated').find('input[name="email"]').val(response.data?.email || '');
+                            }
+                        }
+                    });
+
+                    request.fail(function (jqXHR, textStatus, errorThrown) {
+                        displayErrorOnForm(jqXHR, $form);
+                    });
+                    // callback handler that will be called regardless
+                    // if the request failed or succeeded
+                    request.always(function () {
+                        $inputs.prop('disabled', false);
+                    });
+                    return false;
+                },
+            });
+        }
+    }
+
+    function activeFormLogin() {
+        if ($('#login-form').length) {
+            $('#login-form').validate({
+                ignore: [],
+                errorElement: 'div',
+                errorClass: 'text-danger',
+                rules: {
+                    /*username: {
+                       required: true,
+                       email: true
+                    },
+                    password: {
+                       required: true,
+                    },*/
+                },
+                submitHandler: function (form) {
+                    let $form = $(form);
+                    let $inputs = $form.find('input, button');
+                    let request = handleSendAjax($form, $inputs);
+
+                    // callback handler that will be called on success
+                    request.done(function (response, textStatus, jqXHR) {
+                        // show_toast_alert(response.message, !response.error);
+                        if (!response.error) {
+                            $form[0].reset();
+                            $('.modal').modal('hide');
+                            if (typeof login_callback_url !== 'undefined') {
+                                window.location.href = login_callback_url || '/vi';
+                            } else {
+                                window.location.reload();
+                            }
+                        }
+                    });
+
+                    request.fail(function (jqXHR, textStatus, errorThrown) {
+                        displayErrorOnForm(jqXHR, $form);
+                    });
+                    // callback handler that will be called regardless
+                    // if the request failed or succeeded
+                    request.always(function () {
+                        $inputs.prop('disabled', false);
+                    });
+                    return false;
+                },
+            });
+        }
+    }
+
+    function activeFormForgetPassword() {
+        if ($('#form-request-forget-password').length) {
+            $('#form-request-forget-password').validate({
+                ignore: [],
+                errorElement: 'div',
+                errorClass: 'text-danger',
+                rules: {
+                    /*email_forgot: {
+                        required: true,
+                        email: true
+                    },*/
+                },
+                submitHandler: function (form) {
+                    let $form = $(form);
+                    let $inputs = $form.find('input, button');
+                    let request = handleSendAjax($form, $inputs);
+
+                    // callback handler that will be called on success
+                    request.done(function (response, textStatus, jqXHR) {
+                        // show_toast_alert(response.message, !response.error);
+                        if (!response.error) {
+                            $form[0].reset();
+                            $('.modal').modal('hide');
+                            $('#modalNotActivated .modal-body').html(response.data.html);
+                            $('#modalNotActivated').modal('show');
+                        }
+                    });
+
+                    request.fail(function (jqXHR, textStatus, errorThrown) {
+                        displayErrorOnForm(jqXHR, $form);
+                    });
+                    // callback handler that will be called regardless
+                    // if the request failed or succeeded
+                    request.always(function () {
+                        $inputs.prop('disabled', false);
+                    });
+                    return false;
+                },
+            });
+        }
+    }
+
+    function activeFormResetPassword() {
+        if ($('#form-reset-password').length) {
+            $('#form-reset-password').validate({
+                ignore: [],
+                errorElement: 'div',
+                errorClass: 'text-danger',
+                rules: {
+                    /*reset_password_email: {
+                        required: true,
+                        email: true
+                    },
+                    reset_password_password: {
+                        required: true,
+                        minlength: 6,
+                    },
+                    reset_password_confirm_password: {
+                        required: true,
+                        equalTo: "#reset_password_password"
+                    },*/
+                },
+                submitHandler: function (form) {
+                    let $form = $(form);
+                    let $inputs = $form.find('input, button');
+                    let request = handleSendAjax($form, $inputs);
+
+                    // callback handler that will be called on success
+                    request.done(function (response, textStatus, jqXHR) {
+                        // show_toast_alert(response.message, !response.error);
+                        if (!response.error) {
+                            $form[0].reset();
+                            $('.modal').modal('hide');
+                            $('#modalNotActivated .modal-body').html(response.data.html);
+                            $('#modalNotActivated').modal('show');
+                            setTimeout(function () {
+                                window.location.href = response.data.redirect || '/';
+                            }, 1000);
+                        }
+                    });
+
+                    request.fail(function (jqXHR, textStatus, errorThrown) {
+                        displayErrorOnForm(jqXHR, $form);
+                    });
+                    // callback handler that will be called regardless
+                    // if the request failed or succeeded
+                    request.always(function () {
+                        $inputs.prop('disabled', false);
+                    });
+                    return false;
+                },
+            });
+        }
+    }
+
+    function activeFormActivateAccount() {
+        if ($('#activate-account-form').length) {
+            $('#activate-account-form').validate({
+                ignore: [],
+                errorElement: 'div',
+                errorClass: 'text-danger',
+                rules: {},
+                submitHandler: function (form) {
+                    let $form = $(form);
+                    let $inputs = $form.find('input, button');
+                    let request = handleSendAjax($form, $inputs);
+
+                    // callback handler that will be called on success
+                    request.done(function (response, textStatus, jqXHR) {
+                        // show_toast_alert(response.message, !response.error);
+                        if (!response.error) {
+                            $form[0].reset();
+                            $('#modalNotActivated .modal-body').html(response.data.html);
+                        }
+                    });
+
+                    request.fail(function (jqXHR, textStatus, errorThrown) {
+                        displayErrorOnForm(jqXHR, $form);
+                    });
+                    // callback handler that will be called regardless
+                    // if the request failed or succeeded
+                    request.always(function () {
+                        $inputs.prop('disabled', false);
+                    });
+                    return false;
+                },
+            });
+        }
+    }
+
+
+    function displayErrorOnForm(jqXHR, $form) {
+        let response = jqXHR.responseJSON;
+        if (jqXHR.status === 422) {
+            if (response.data) {
+                $.each(response.data, function (key, val) {
+                    $form.find('.error-text.' + key).html(val[0]);
+                    $form.find('input[name="' + key + '"]').addClass('is-invalid');
+                });
+            }
+        } else if (jqXHR.status === 401) {
+            if (response.data && response.data.action && response.data?.action === 'need_active') {
+                $('.modal').modal('hide');
+                let modalActivate = $('#modalNotActivated');
+                modalActivate.find('input[name="email"]').val(response.data?.email || '');
+                modalActivate.modal('show');
+            }
+        }
+        if (response && response.error) {
+            $form.find('.error-text._all_message').html(response.msg ?? response.message ?? 'Error');
+        }
+        // show_toast_alert(jqXHR.responseJSON.msg ?? jqXHR.responseJSON.message, false);
+    }
+
+    function handleSendAjax($form, $inputs) {
+        // serialize the data in the form
+        let dataInputs = new FormData($form[0]);
+        // let's disable the inputs for the duration of the ajax request
+        $inputs.prop('disabled', true);
+        resetErrorMessage($form);
+
+        // fire off the request
+        return $.ajax({
+            url: $form.attr('action'),
+            type: 'post',
+            data: dataInputs,
+            cache: false,
+            contentType: false,
+            processData: false,
+        });
+    }
+
+    function resetErrorMessage($form) {
+        $form.find('.error-text').text('');
+        $form.find('input.form-control').removeClass('is-invalid');
+    }
+
+    $(document).ready(function () {
+        activeFormLogin();
+        activeFormSignUp();
+        activeFormForgetPassword();
+        activeFormResetPassword();
+        activeFormActivateAccount();
+        if ($('#modalCreateNewPassword').length) {
+            $('#modalCreateNewPassword').modal({
+                    backdrop: 'static',
+                    keyboard: false
+                },
+            ).modal('show');
+        }
+    });
+})(jQuery);

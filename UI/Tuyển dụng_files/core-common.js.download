@@ -1,0 +1,174 @@
+/**
+ * Core dùng chung cho Frontend. Copy các hàm cần dùng từ public/js/core.js
+ */
+/*-----------------------------*/
+/*        SHOPPING CORE		   */
+/*-----------------------------*/
+var shop = {
+    _store: {
+        ajax: {},
+        method: {},
+        variable: {},
+        cache: {},
+        popup: {},
+    },
+};
+
+/*-----------------------------*/
+/*        AJAX - POST - GET	   */
+/*-----------------------------*/
+// them co che cache, chong duplicate option = {cache: 'cache_key', duplicate: false}
+shop.ajax_popup = function (url, method, param, callback, option) {
+    var opt = {
+        loading: (shop.is_obj(option) && shop.is_func(option.loading)) ? option.loading : shop.show_loading,
+        error: (shop.is_obj(option) && shop.is_func(option.error)) ? option.error : shop.hide_loading,
+        cache: (shop.is_obj(option) && shop.is_exists(option.cache)) ? option.cache : '',
+        duplicate: (shop.is_obj(option) && shop.is_exists(option.duplicate)) ? option.duplicate : false,
+        baseUrl: (shop.is_obj(option) && shop.is_exists(option.baseUrl)) ? option.baseUrl : ENV.BASE_URL
+    };
+    if (!shop.is_exists(url) || (!opt.duplicate && shop.is_exists(shop._store.ajax[url]))) {
+        return
+    }
+    if (shop.is_exists(callback) && shop.is_exists(opt.cache) && (opt.cache != '')) {
+        var fromCache = shop.cache.get(opt.cache, false);
+        if (fromCache) {
+            callback(fromCache);
+            return
+        }
+    }
+    $.ajaxSetup({
+        headers: {
+            'X-CSRF-TOKEN': ENV.token
+        }
+    });
+    let settings = {
+        beforeSend: function () {
+            opt.loading();
+            shop._store.ajax[url] = 1
+        },
+        // url: opt.baseUrl + 'ajax/' + url,
+        url: url,
+        type: method ? method : 'POST',
+        data: param,
+        headers: ENV.headerParams,
+        dataType: (shop.is_obj(option) && shop.is_exists(option.dataType)) ? option.dataType : 'json',
+        success: function (xhr) {
+            delete shop._store.ajax[url];
+            shop.hide_loading();
+            if (xhr && shop.is_exists(xhr.intReturn)) {
+                switch (xhr.intReturn) {
+                    case -1:
+                        alert(xhr.msg ?? xhr.message); // thong bao loi
+                        break;
+                    case 0:
+                        alert(xhr.msg ?? xhr.message); //canh bao
+                        break;
+                    case 1:
+                        alert(xhr.msg ?? xhr.message); // thong bao
+                        break
+                }
+            }
+            if (shop.is_exists(xhr.script)) {
+                eval(xhr.script)
+            }
+            if (shop.is_exists(callback)) {
+                if (shop.is_exists(opt.cache) && (opt.cache != '')) {
+                    shop.cache.set(opt.cache, xhr)
+                }
+                callback(xhr)
+            }
+        },
+        error: function (xhr, textStatus, errorThrown) {
+            delete shop._store.ajax[url];
+            opt.error(xhr);
+            if (shop.is_obj(shop.rootPanel) && shop.rootPanel.mode.debug == 1) {
+                alert('Status:' + textStatus + '\n' + errorThrown)
+            }
+        }
+    };
+    if (shop.is_obj(option) && shop.is_exists(option.processData)) settings.processData = option.processData;
+    if (shop.is_obj(option) && shop.is_exists(option.contentType)) settings.contentType = option.contentType;
+    $.ajax(settings).always((response) => {
+        (shop.is_obj(option) && shop.is_func(option.always)) ? option.always(response) : false;
+    });
+};
+
+// loading float container
+shop.show_loading = function (txt) { return ''; };
+shop.update_position = function () { return ''; };
+shop.hide_loading = function () { return ''; };
+
+/*-----------------------------*/
+/*        CHECKING			   */
+/*-----------------------------*/
+shop.is_func = function (func) { return (func != null && func.constructor == Function) };
+
+shop.is_obj = function (obj) { return (obj != null && obj instanceof Object) };
+
+shop.is_exists = function (obj) { return (obj != null && obj != undefined && obj != "undefined") };
+
+shop.is_blank = function (str) { return (shop.util_trim(str) == "") };
+
+/*-----------------------------*/
+/*        CACHE & DATA  	   */
+/*-----------------------------*/
+shop.cache = { get: function (key, def) { if (shop.is_exists(shop._store.cache[key])) { return shop._store.cache[key] } return shop.is_exists(def) ? def : '' }, set: function (key, val) { shop._store.cache[key] = val }, del: function (key) { shop._store.cache[key] = null; delete shop._store.cache[key] } };
+
+/*-----------------------------*/
+/*        TOOLS				   */
+/*-----------------------------*/
+shop.util_trim = function (str) { return (/string/).test(typeof str) ? str.replace(/^\s+|\s+$/g, "") : "" };
+
+shop.changeBulkActionCheckBox = function (ele, callback = null, holderClass = '._multi_buy') {
+    if (ele.checked) {
+        $(ele).closest(holderClass).find('input.bulk_action-item').not(ele).prop('checked', true);
+        if (shop.is_exists(callback) && shop.is_func(callback)) callback(callback);
+    } else {
+        $(ele).closest(holderClass).find('input.bulk_action-item').not(ele).prop('checked', false);
+        if (shop.is_exists(callback) && shop.is_func(callback)) callback(callback);
+    }
+};
+
+//sweetalert2
+shop.alert = function(msg, icon, cb, cbData){
+    var buildinIcon = ['warning', 'error', 'success', 'info', 'question'], title = '';
+    if(buildinIcon.indexOf(icon) < 0)icon = 'info';
+    msg = msg ? msg : '';
+    if(!shop.is_blank(msg)) {
+        switch (icon) {
+            case 'error':title = 'Đã có lỗi xảy ra';break;
+            case 'success':title = 'Thành công';break;
+            case 'warning':case 'question':title = '';break;
+            default:title = 'Thông báo';
+        }
+        Swal.fire({ title: title, html: msg, icon: icon }).then(function(){
+            if(cb)if(cbData){cb(cbData);}else cb();
+        });
+    }
+};
+
+shop.quickAlert=function(t,o=1300){t=t||'',shop.is_blank(t)||Swal.fire({position:'top-end',text:t,showConfirmButton:!1,customClass:{popup:'pt-2 pb-2',htmlContainer:'text-left'},timer:o})};
+
+shop.confirmActionDelete=function(n="",t,o="warning"){return Swal.fire({backdrop:!1,background:"rgb(240 240 243)",title:"Xác nhận!",html:n,icon:o,showCancelButton:!0,confirmButtonText:"Đồng ý",cancelButtonText:"Hủy",showCloseButton:!0}).then((n=>{n.isConfirmed&&t()}))};
+
+/*-----------------------------*/
+/*        EXTRA FUNCTIONS	   */
+/*-----------------------------*/
+shop.formatPrice = function (value) {
+    let val = (value / 1).toFixed(0).replace('.', ',');
+    return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+};
+
+shop.putLoading = (reset = false, eleClass = '._putLoading') => {
+    if (reset) {
+        $(eleClass).html('');
+    } else {
+        $(eleClass).html('<span class="spinner-border spinner-border-sm"></span>');
+    }
+}
+
+shop.parseIntFromPriceString = (priceStr = '') => {
+    let price = priceStr.replace(/[\₫.]/g, '').replace(/\s/g, '') ?? 0;
+    price = parseInt(price);
+    return isNaN(price) ? 0 : price;
+};

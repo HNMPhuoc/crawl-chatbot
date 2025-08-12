@@ -1,0 +1,8 @@
+.swal2-popup #swal2-content {
+    margin: 5px 0;
+    text-align: left;
+}
+
+.swal2-popup .swal2-content {
+    padding: 0;
+}
